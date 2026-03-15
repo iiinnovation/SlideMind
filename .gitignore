@@ -1,0 +1,29 @@
+node_modules/
+out/
+dist/
+.DS_Store
+*.local
+.env
+.env.*
+.claude/
+
+# PRD / internal docs
+prd.md
+prd_v2.md
+CLAUDE.md
+docs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+
+# Build artifacts
+*.dmg
+*.exe
+*.AppImage
+*.snap

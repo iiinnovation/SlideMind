@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Design Tokens as CSS Variables ── */
+:root {
+  --color-page: #F5F5F0;
+  --color-surface: #FFFFFF;
+  --color-surface-hover: #F5F5F0;
+  --color-text-primary: #1A1A18;
+  --color-text-secondary: #6B6A68;
+  --color-text-muted: #9A9893;
+  --color-accent: #AE5630;
+  --color-accent-hover: #C4633A;
+  --color-accent-active: #963E22;
+  --color-border: rgba(0, 0, 0, 0.08);
+  --color-border-strong: rgba(0, 0, 0, 0.15);
+  --font-sans: 'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', ui-monospace, monospace;
+}
+
+/* ── CodeMirror Theme Overrides ── */
+.cm-editor {
+  height: 100%;
+  background: var(--color-surface);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.cm-editor .cm-gutters {
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+}
+
+.cm-editor .cm-activeLineGutter {
+  background: var(--color-surface-hover);
+  color: var(--color-text-secondary);
+}
+
+.cm-editor .cm-activeLine {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.cm-editor .cm-cursor {
+  border-left-color: var(--color-accent);
+  border-left-width: 1.5px;
+}
+
+.cm-editor .cm-selectionBackground,
+.cm-editor.cm-focused .cm-selectionBackground {
+  background: rgba(174, 86, 48, 0.12) !important;
+}
+
+.cm-editor:focus,
+.cm-editor.cm-focused {
+  outline: none;
+}
+
+.cm-editor .cm-scroller {
+  overflow: auto;
+}
+
+/* ── Loading Animation ── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}

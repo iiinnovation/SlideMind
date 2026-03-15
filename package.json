@@ -1,0 +1,41 @@
+{
+  "name": "slidemind",
+  "version": "0.1.0",
+  "description": "AI 驱动的教师专属课件生成器",
+  "type": "module",
+  "main": "./out/main/index.js",
+  "author": "SlideMind",
+  "license": "MIT",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "build:win": "electron-vite build && electron-builder --win",
+    "build:mac": "electron-vite build && electron-builder --mac",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts",
+    "typecheck": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "@electron-toolkit/utils": "^4.0.0",
+    "electron-store": "^8.2.0",
+    "lucide-vue-next": "^0.577.0",
+    "mammoth": "^1.12.0",
+    "pdf-parse": "^2.4.5",
+    "pinia": "^2.2.6",
+    "pptxgenjs": "^3.12.0",
+    "vue": "^3.5.13",
+    "vue-router": "^4.4.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "autoprefixer": "^10.4.20",
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8",
+    "electron-vite": "^2.3.0",
+    "eslint": "^9.15.0",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.16",
+    "typescript": "^5.7.2",
+    "vue-tsc": "^2.1.10"
+  }
+}
