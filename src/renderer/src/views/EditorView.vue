@@ -60,6 +60,15 @@ function handleSend(content: string, attachments?: UIAttachment[]) {
       />
 
       <div class="relative flex-1 overflow-hidden">
+        <button
+          v-if="sidebarCollapsed"
+          class="absolute left-3 top-4 z-20 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-white/92 text-text-secondary shadow-sm backdrop-blur transition-all duration-150 hover:border-[#d0b09b] hover:bg-[#fcf7f3] hover:text-text-primary"
+          title="展开会话栏"
+          @click="sidebarCollapsed = false"
+        >
+          <PanelLeft :size="18" :stroke-width="1.75" />
+        </button>
+
         <Transition name="fade" mode="out-in">
           <div
             v-if="!editorStore.isReady"

@@ -14,6 +14,10 @@ const providers: LLMProvider[] = ['deepseek', 'doubao', 'qianwen']
 const selectedProvider = ref<LLMProvider>(settingsStore.currentProvider)
 const apiKey = ref('')
 const selectedModel = ref(settingsStore.currentModel)
+const selectedTitleFontFamily = ref(settingsStore.presentationTitleFontFamily)
+const selectedBodyFontFamily = ref(settingsStore.presentationBodyFontFamily)
+const selectedTitleFontSize = ref(settingsStore.presentationTitleFontSize)
+const selectedBodyFontSize = ref(settingsStore.presentationBodyFontSize)
 const showKey = ref(false)
 
 const testStatus = ref<'idle' | 'testing' | 'success' | 'error'>('idle')
@@ -21,10 +25,27 @@ const testMessage = ref('')
 
 const visible = ref(false)
 
+const fontOptions = [
+  { label: '微软雅黑', value: 'Microsoft YaHei' },
+  { label: '苹方', value: 'PingFang SC' },
+  { label: '思源黑体', value: 'Noto Sans SC' },
+  { label: '宋体', value: 'SimSun' },
+  { label: '黑体', value: 'SimHei' },
+  { label: '楷体', value: 'KaiTi' },
+  { label: '仿宋', value: 'FangSong' }
+]
+
+const titleFontSizeOptions = [24, 28, 32, 36, 40]
+const bodyFontSizeOptions = [14, 16, 18, 20, 22, 24]
+
 onMounted(async () => {
   await settingsStore.loadApiKeyForProvider(selectedProvider.value)
   apiKey.value = settingsStore.apiKeys[selectedProvider.value]
   selectedModel.value = settingsStore.currentModel
+  selectedTitleFontFamily.value = settingsStore.presentationTitleFontFamily
+  selectedBodyFontFamily.value = settingsStore.presentationBodyFontFamily
+  selectedTitleFontSize.value = settingsStore.presentationTitleFontSize
+  selectedBodyFontSize.value = settingsStore.presentationBodyFontSize
   requestAnimationFrame(() => {
     visible.value = true
   })
@@ -34,6 +55,10 @@ watch(selectedProvider, async (provider) => {
   await settingsStore.loadApiKeyForProvider(provider)
   apiKey.value = settingsStore.apiKeys[provider]
   selectedModel.value = LLM_CONFIGS[provider].defaultModel
+  selectedTitleFontFamily.value = settingsStore.presentationTitleFontFamily
+  selectedBodyFontFamily.value = settingsStore.presentationBodyFontFamily
+  selectedTitleFontSize.value = settingsStore.presentationTitleFontSize
+  selectedBodyFontSize.value = settingsStore.presentationBodyFontSize
   testStatus.value = 'idle'
   testMessage.value = ''
   showKey.value = false
@@ -104,6 +129,10 @@ async function handleSave() {
   settingsStore.setProvider(selectedProvider.value)
   settingsStore.setApiKey(selectedProvider.value, apiKey.value)
   settingsStore.setModel(selectedModel.value)
+  settingsStore.setPresentationTitleFontFamily(selectedTitleFontFamily.value)
+  settingsStore.setPresentationBodyFontFamily(selectedBodyFontFamily.value)
+  settingsStore.setPresentationTitleFontSize(selectedTitleFontSize.value)
+  settingsStore.setPresentationBodyFontSize(selectedBodyFontSize.value)
   await settingsStore.saveSettings()
   handleClose()
 }
@@ -198,6 +227,82 @@ async function handleSave() {
                     {{ m }}
                   </option>
                 </select>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="mb-2 block text-xs font-medium tracking-wide text-text-secondary">
+                    标题字体
+                  </label>
+                  <select
+                    v-model="selectedTitleFontFamily"
+                    class="w-full appearance-none rounded border bg-page px-3 py-2 text-sm text-text-primary transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/10"
+                  >
+                    <option
+                      v-for="font in fontOptions"
+                      :key="font.value"
+                      :value="font.value"
+                    >
+                      {{ font.label }}
+                    </option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="mb-2 block text-xs font-medium tracking-wide text-text-secondary">
+                    标题字号
+                  </label>
+                  <select
+                    v-model="selectedTitleFontSize"
+                    class="w-full appearance-none rounded border bg-page px-3 py-2 text-sm text-text-primary transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/10"
+                  >
+                    <option
+                      v-for="size in titleFontSizeOptions"
+                      :key="size"
+                      :value="size"
+                    >
+                      {{ size }} px
+                    </option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="mb-2 block text-xs font-medium tracking-wide text-text-secondary">
+                    正文字体
+                  </label>
+                  <select
+                    v-model="selectedBodyFontFamily"
+                    class="w-full appearance-none rounded border bg-page px-3 py-2 text-sm text-text-primary transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/10"
+                  >
+                    <option
+                      v-for="font in fontOptions"
+                      :key="font.value"
+                      :value="font.value"
+                    >
+                      {{ font.label }}
+                    </option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="mb-2 block text-xs font-medium tracking-wide text-text-secondary">
+                    正文字号
+                  </label>
+                  <select
+                    v-model="selectedBodyFontSize"
+                    class="w-full appearance-none rounded border bg-page px-3 py-2 text-sm text-text-primary transition-colors duration-150 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/10"
+                  >
+                    <option
+                      v-for="size in bodyFontSizeOptions"
+                      :key="size"
+                      :value="size"
+                    >
+                      {{ size }} px
+                    </option>
+                  </select>
+                </div>
               </div>
 
               <!-- Test connection -->

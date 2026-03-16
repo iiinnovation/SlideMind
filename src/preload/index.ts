@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 import type { EditorStateSnapshot } from '../shared/types/session'
 import type { FileParseResult } from '../shared/types/attachment'
 import type { Slide } from '../shared/types/slide'
+import type { AppPreferences, PresentationTypographySettings } from '../shared/types/settings'
 
 export interface ExportResult {
   success: boolean
@@ -10,8 +11,11 @@ export interface ExportResult {
 }
 
 const api = {
-  exportPptx: (slides: Slide[], themeName: string): Promise<ExportResult> =>
-    ipcRenderer.invoke('export:pptx', slides, themeName),
+  exportPptx: (
+    slides: Slide[],
+    themeName: string,
+    typography: PresentationTypographySettings
+  ): Promise<ExportResult> => ipcRenderer.invoke('export:pptx', slides, themeName, typography),
 
   openFileDialog: (): Promise<string | null> =>
     ipcRenderer.invoke('dialog:openFile'),
@@ -25,10 +29,10 @@ const api = {
   deleteApiKey: (provider: string): Promise<void> =>
     ipcRenderer.invoke('settings:deleteApiKey', provider),
 
-  savePreferences: (prefs: { provider: string; model: string }): Promise<void> =>
+  savePreferences: (prefs: AppPreferences): Promise<void> =>
     ipcRenderer.invoke('settings:savePreferences', prefs),
 
-  loadPreferences: (): Promise<{ provider: string; model: string }> =>
+  loadPreferences: (): Promise<AppPreferences> =>
     ipcRenderer.invoke('settings:loadPreferences'),
 
   saveEditorState: (snapshot: EditorStateSnapshot): Promise<void> =>

@@ -2,7 +2,8 @@
 
 section {
   box-sizing: border-box;
-  font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  font-family: var(--slide-body-font-family, 'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif);
+  font-size: var(--slide-body-font-size, 16px);
   background: #FFFFFF;
   color: #243042;
   padding: 56px 72px;
@@ -12,7 +13,8 @@ section {
 }
 
 section h1 {
-  font-size: 2em;
+  font-family: var(--slide-title-font-family, 'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif);
+  font-size: calc(var(--slide-title-font-size, 28px) * 1.14);
   font-weight: 500;
   color: #1A1A18;
   line-height: 1.2;
@@ -20,7 +22,8 @@ section h1 {
 }
 
 section h2 {
-  font-size: 1.4em;
+  font-family: var(--slide-title-font-family, 'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif);
+  font-size: calc(var(--slide-title-font-size, 28px) * 0.8);
   font-weight: 500;
   color: #1A1A18;
   line-height: 1.3;
@@ -30,7 +33,8 @@ section h2 {
 }
 
 section h3 {
-  font-size: 1.1em;
+  font-family: var(--slide-title-font-family, 'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif);
+  font-size: calc(var(--slide-title-font-size, 28px) * 0.63);
   font-weight: 500;
   color: #AE5630;
   line-height: 1.3;
@@ -97,6 +101,129 @@ section td {
 section th {
   font-weight: 500;
   background: #F5F5F0;
+}
+
+section.question-answer,
+section.question-choice,
+section.question-material {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-auto-rows: min-content;
+  gap: 14px;
+  align-content: start;
+}
+
+section.question-answer h1,
+section.question-choice h1,
+section.question-material h1 {
+  grid-column: 1 / -1;
+  margin-bottom: 0.1em;
+}
+
+section.question-answer > .region,
+section.question-choice > .region,
+section.question-material > .region {
+  border: 1px solid rgba(174, 86, 48, 0.18);
+  background: #fbf7f3;
+  border-radius: 18px;
+  padding: 15px 17px 16px;
+  min-height: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+section.question-answer > .region::before,
+section.question-choice > .region::before,
+section.question-material > .region::before {
+  content: attr(data-region-label);
+  display: block;
+  margin-bottom: 0.55em;
+  font-family: var(--slide-title-font-family, 'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif);
+  font-size: 0.78em;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #ae5630;
+}
+
+section.question-answer > .region > :first-child,
+section.question-choice > .region > :first-child,
+section.question-material > .region > :first-child {
+  margin-top: 0;
+}
+
+section.question-answer > .region ul,
+section.question-choice > .region ul,
+section.question-material > .region ul,
+section.question-answer > .region ol,
+section.question-choice > .region ol,
+section.question-material > .region ol {
+  margin-top: 0.05em;
+  margin-bottom: 0.1em;
+}
+
+section.question-answer > .region-question {
+  grid-column: 1 / -1;
+}
+
+section.question-answer > .region-analysis {
+  grid-column: 1 / 5;
+}
+
+section.question-answer > .region-answer {
+  grid-column: 5 / 9;
+}
+
+section.question-answer > .region-tips {
+  grid-column: 9 / -1;
+}
+
+section.question-choice > .region-question {
+  grid-column: 1 / -1;
+}
+
+section.question-choice > .region-options {
+  grid-column: 1 / 8;
+}
+
+section.question-choice > .region-answer,
+section.question-choice > .region-tips {
+  grid-column: 8 / -1;
+}
+
+section.question-material > .region-material {
+  grid-column: 1 / 5;
+  grid-row: 2 / span 3;
+}
+
+section.question-material > .region-question {
+  grid-column: 5 / -1;
+}
+
+section.question-material > .region-analysis {
+  grid-column: 5 / 9;
+}
+
+section.question-material > .region-answer {
+  grid-column: 9 / -1;
+}
+
+section.question-material > .region-tips {
+  grid-column: 5 / -1;
+}
+
+.region[data-region='question'] {
+  background: #f9f4ef;
+}
+
+.region[data-region='answer'] {
+  background: #f4f8ef;
+}
+
+.region[data-region='tips'] {
+  background: #fff8ec;
+}
+
+.region[data-region='material'] {
+  background: #f6f6f4;
 }
 
 .slide-image { text-align: center; margin: 0.5em 0; }

@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount, toRef } from 'vue'
+import { computed, ref, watch, onMounted, onBeforeUnmount, toRef } from 'vue'
 import { useSlideRenderer } from '../composables/useSlideRenderer'
 import { useShadowDom } from '../composables/useShadowDom'
 import { useEditorStore } from '../stores/editor'
+import { useSettingsStore } from '../stores/settings'
 import { ChevronLeft, ChevronRight, Download } from 'lucide-vue-next'
 import type { Slide } from '../../../shared/types/slide'
+import type { PresentationTypographySettings } from '../../../shared/types/settings'
 
 const props = defineProps<{
   slides: Slide[]
@@ -12,6 +14,13 @@ const props = defineProps<{
 }>()
 
 const editorStore = useEditorStore()
+const settingsStore = useSettingsStore()
+const typographySettings = computed<PresentationTypographySettings>(() => ({
+  titleFontFamily: settingsStore.presentationTitleFontFamily,
+  bodyFontFamily: settingsStore.presentationBodyFontFamily,
+  titleFontSize: settingsStore.presentationTitleFontSize,
+  bodyFontSize: settingsStore.presentationBodyFontSize
+}))
 
 const previewContainerRef = ref<HTMLElement | null>(null)
 const containerScale = ref(1)
@@ -27,7 +36,8 @@ const {
 } = useSlideRenderer(
   toRef(props, 'slides'),
   toRef(props, 'theme'),
-  toRef(editorStore, 'isGenerating')
+  toRef(editorStore, 'isGenerating'),
+  typographySettings
 )
 
 const { hostRef, updateCSS, updateSlide, clear } = useShadowDom()
@@ -83,7 +93,8 @@ onBeforeUnmount(() => {
 async function handleExport() {
   const result = await window.api.exportPptx(
     JSON.parse(JSON.stringify(editorStore.slides)),
-    editorStore.currentTheme
+    editorStore.currentTheme,
+    typographySettings.value
   )
   if (result.success) {
     alert(`导出成功：${result.filePath}`)

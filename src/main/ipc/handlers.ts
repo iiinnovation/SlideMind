@@ -12,9 +12,17 @@ import { loadEditorState, saveEditorState } from '../services/sessionService'
 import { IPC_CHANNELS } from '../../shared/constants'
 import type { EditorStateSnapshot } from '../../shared/types/session'
 import type { Slide } from '../../shared/types/slide'
+import type { AppPreferences, PresentationTypographySettings } from '../../shared/types/settings'
 
 export function registerIpcHandlers(): void {
-  ipcMain.handle('export:pptx', async (_event, slides: Slide[], themeName: string) => {
+  ipcMain.handle(
+    'export:pptx',
+    async (
+      _event,
+      slides: Slide[],
+      themeName: string,
+      typography: PresentationTypographySettings
+    ) => {
     const { filePath } = await dialog.showSaveDialog({
       title: '导出课件',
       defaultPath: 'slideshow.pptx',
@@ -26,12 +34,13 @@ export function registerIpcHandlers(): void {
     }
 
     try {
-      await exportToPptx(slides, themeName, filePath)
+      await exportToPptx(slides, themeName, filePath, typography)
       return { success: true, filePath }
     } catch (error) {
       return { success: false, reason: String(error) }
     }
-  })
+    }
+  )
 
   ipcMain.handle('dialog:openFile', async () => {
     const { filePaths } = await dialog.showOpenDialog({
@@ -66,7 +75,7 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle(
     IPC_CHANNELS.SETTINGS_SAVE_PREFERENCES,
-    (_event, prefs: { provider: string; model: string }) => {
+    (_event, prefs: AppPreferences) => {
       savePreferences(prefs)
     }
   )

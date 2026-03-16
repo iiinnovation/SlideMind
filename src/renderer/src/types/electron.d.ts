@@ -1,6 +1,7 @@
 import type { EditorStateSnapshot } from '../../../shared/types/session'
 import type { FileParseResult } from '../../../shared/types/attachment'
 import type { Slide } from '../../../shared/types/slide'
+import type { AppPreferences, PresentationTypographySettings } from '../../../shared/types/settings'
 
 export interface ExportResult {
   success: boolean
@@ -9,13 +10,17 @@ export interface ExportResult {
 }
 
 export interface ElectronAPI {
-  exportPptx: (slides: Slide[], themeName: string) => Promise<ExportResult>
+  exportPptx: (
+    slides: Slide[],
+    themeName: string,
+    typography: PresentationTypographySettings
+  ) => Promise<ExportResult>
   openFileDialog: () => Promise<string | null>
   saveApiKey: (provider: string, key: string) => Promise<void>
   loadApiKey: (provider: string) => Promise<string>
   deleteApiKey: (provider: string) => Promise<void>
-  savePreferences: (prefs: { provider: string; model: string }) => Promise<void>
-  loadPreferences: () => Promise<{ provider: string; model: string }>
+  savePreferences: (prefs: AppPreferences) => Promise<void>
+  loadPreferences: () => Promise<AppPreferences>
   saveEditorState: (snapshot: EditorStateSnapshot) => Promise<void>
   loadEditorState: () => Promise<EditorStateSnapshot>
   selectFiles: () => Promise<string[]>

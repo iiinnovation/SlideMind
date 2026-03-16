@@ -11,6 +11,7 @@ import {
   X
 } from 'lucide-vue-next'
 import { useEditorStore } from '@/stores/editor'
+import { formatMessagePreview } from '@/services/conversationPreview'
 
 const props = defineProps<{
   collapsed: boolean
@@ -59,11 +60,11 @@ function summarizeConversation(conversationId: string) {
 
   const lastMessage = conversation.messages[conversation.messages.length - 1]
   if (lastMessage?.content) {
-    return lastMessage.content.slice(0, 36)
+    return formatMessagePreview(lastMessage.content, 36)
   }
 
   if (conversation.markdown) {
-    return conversation.markdown.slice(0, 36)
+    return formatMessagePreview(conversation.markdown, 36)
   }
 
   return '等待输入课件需求'
@@ -96,38 +97,35 @@ function handleDelete(conversationId: string) {
 <template>
   <aside
     class="flex h-full flex-col border-r bg-white/70 backdrop-blur-sm transition-all duration-200"
-    :class="props.collapsed ? 'w-[68px]' : 'w-[300px]'"
+    :class="props.collapsed ? 'w-0 overflow-hidden border-r-0 opacity-0' : 'w-[300px] opacity-100'"
+    :aria-hidden="props.collapsed"
   >
-    <div
-      class="border-b"
-      :class="props.collapsed ? 'px-2 py-3' : 'px-3 py-4'"
-    >
-      <div
-        class="mb-3 flex items-center"
-        :class="props.collapsed ? 'justify-center' : 'justify-end'"
-      >
+    <div class="border-b px-3 py-4">
+      <div class="mb-3 flex items-center justify-between">
+        <div class="pl-1 text-[12px] font-semibold uppercase tracking-[0.16em] text-text-muted">
+          会话
+        </div>
+
         <button
-          class="inline-flex items-center justify-center text-text-secondary transition-colors duration-150 hover:bg-surface-hover hover:text-text-primary"
-          :class="props.collapsed ? 'h-10 w-10 rounded-xl' : 'rounded p-1.5'"
+          class="inline-flex items-center justify-center gap-1.5 rounded-full border border-border bg-white px-3 py-2 text-text-secondary shadow-sm transition-all duration-150 hover:border-[#d0b09b] hover:bg-[#fcf7f3] hover:text-text-primary"
+          title="收起会话栏"
           @click="emit('toggle')"
         >
-          <ChevronLeft v-if="!props.collapsed" :size="16" :stroke-width="1.75" />
-          <ChevronRight v-else :size="16" :stroke-width="1.75" />
+          <ChevronLeft :size="16" :stroke-width="1.75" />
+          <span class="text-xs font-medium">收起</span>
         </button>
       </div>
 
       <button
-        class="inline-flex items-center justify-center gap-2 bg-accent text-sm font-medium text-white transition-all duration-150 hover:bg-accent-hover active:scale-[0.99] active:bg-accent-active disabled:opacity-60"
-        :class="props.collapsed ? 'h-11 w-11 rounded-2xl mx-auto' : 'w-full rounded-lg px-4 py-2.5'"
+        class="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white transition-all duration-150 hover:bg-accent-hover active:scale-[0.99] active:bg-accent-active disabled:opacity-60"
         :disabled="editorStore.isAnyConversationGenerating"
-        :title="props.collapsed ? '新建对话' : undefined"
         @click="editorStore.createConversation()"
       >
         <MessageSquarePlus :size="16" :stroke-width="1.75" />
-        <span v-if="!props.collapsed">新建对话</span>
+        <span>新建对话</span>
       </button>
 
-      <div v-if="!props.collapsed" class="relative mt-3">
+      <div class="relative mt-3">
         <Search
           :size="15"
           :stroke-width="1.75"
@@ -142,40 +140,18 @@ function handleDelete(conversationId: string) {
       </div>
     </div>
 
-    <div
-      class="flex-1 overflow-y-auto"
-      :class="props.collapsed ? 'space-y-2 px-2 py-3' : 'space-y-2 px-3 py-3'"
-    >
+    <div class="flex-1 overflow-y-auto space-y-2 px-3 py-3">
       <button
         v-for="conversation in conversations"
         :key="conversation.id"
         class="group w-full text-left transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-70"
-        :class="props.collapsed
-          ? conversation.id === editorStore.activeConversationId
-            ? 'rounded-2xl bg-[#f3e3da] ring-1 ring-[#c88158] shadow-sm'
-            : 'rounded-2xl bg-transparent hover:bg-surface-hover'
-          : conversation.id === editorStore.activeConversationId
-            ? 'rounded-xl border border-accent bg-[#f7eee9] px-3 py-3 shadow-sm'
-            : 'rounded-xl border border-transparent px-3 py-3 hover:border-border hover:bg-surface-hover'"
+        :class="conversation.id === editorStore.activeConversationId
+          ? 'rounded-xl border border-accent bg-[#f7eee9] px-3 py-3 shadow-sm'
+          : 'rounded-xl border border-transparent px-3 py-3 hover:border-border hover:bg-surface-hover'"
         :disabled="editorStore.isAnyConversationGenerating"
-        :title="props.collapsed ? conversation.title : undefined"
         @click="editorStore.switchConversation(conversation.id)"
       >
-        <div
-          v-if="props.collapsed"
-          class="flex h-11 w-full items-center justify-center"
-        >
-          <div
-            class="flex h-9 w-9 items-center justify-center rounded-xl text-[11px] font-semibold tracking-[0.02em]"
-            :class="conversation.id === editorStore.activeConversationId
-              ? 'bg-white text-accent'
-              : 'bg-[#f5f1ec] text-text-secondary'"
-          >
-            {{ conversation.title.slice(0, 2) }}
-          </div>
-        </div>
-
-        <div v-else class="flex items-start justify-between gap-3">
+        <div class="flex items-start justify-between gap-3">
           <div class="min-w-0 flex-1">
             <div v-if="editingId === conversation.id" class="flex items-center gap-1">
               <input
@@ -236,7 +212,7 @@ function handleDelete(conversationId: string) {
       </button>
 
       <div
-        v-if="!props.collapsed && conversations.length === 0"
+        v-if="conversations.length === 0"
         class="rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-text-muted"
       >
         没有匹配的会话

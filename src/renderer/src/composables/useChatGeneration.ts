@@ -1,10 +1,24 @@
 import { useEditorStore } from '@/stores/editor'
 import { useSettingsStore } from '@/stores/settings'
-import { SCENE_CONFIGS, type SceneType } from '@/services/promptService'
+import {
+  SCENE_CONFIGS,
+  buildContentSystemPrompt,
+  buildPlanningSystemPrompt,
+  parseSlidePlan,
+  reconcileSlidesWithPlan,
+  type SlidePlanDocument,
+  type SceneType
+} from '@/services/promptService'
 import { streamChat } from '@/services/llmService'
 import { extractCompletedSlides, finalizePresentation } from '@/services/presentationJson'
 import { createChunkBatcher } from './useChunkBatcher'
-import type { ChatMessage, ChatMessagePart, UIChatMessage, UIAttachment } from '@/types/llm'
+import type {
+  ChatMessage,
+  ChatMessagePart,
+  LLMProvider,
+  UIChatMessage,
+  UIAttachment
+} from '@/types/llm'
 
 function buildUserContent(msg: UIChatMessage): string | ChatMessagePart[] {
   const attachments = msg.attachments
@@ -47,6 +61,70 @@ function buildUserContent(msg: UIChatMessage): string | ChatMessagePart[] {
   return parts
 }
 
+function buildBaseMessages(
+  messages: UIChatMessage[],
+  assistantId: string,
+  systemPrompt: string
+): ChatMessage[] {
+  const llmMessages: ChatMessage[] = [{ role: 'system', content: systemPrompt }]
+
+  const currentMsg = messages[messages.length - 2]
+  const imageAttachments = currentMsg?.attachments?.filter(
+    (a) => a.fileType === 'image' && a.imageDataUrl
+  )
+  if (imageAttachments && imageAttachments.length > 0) {
+    const imageList = imageAttachments
+      .map((a, i) => `图片${i + 1}: "${a.fileName}" (data URI 已在用户消息中提供)`)
+      .join('\n')
+    llmMessages.push({
+      role: 'system',
+      content: `用户提供了以下图片，如果适合嵌入课件，可以使用 {"type": "image", "src": "<data URI>", "alt": "描述"} 元素。可用图片：\n${imageList}`
+    })
+  }
+
+  for (const msg of messages) {
+    if (msg.id === assistantId) break
+    if (msg.role === 'user') {
+      llmMessages.push({ role: 'user', content: buildUserContent(msg) })
+    } else if (msg.role === 'assistant' && msg.status === 'complete') {
+      llmMessages.push({ role: 'assistant', content: msg.content })
+    }
+  }
+
+  return llmMessages
+}
+
+async function streamToString(
+  provider: LLMProvider,
+  apiKey: string,
+  messages: ChatMessage[],
+  model?: string
+): Promise<string> {
+  return await new Promise<string>((resolve, reject) => {
+    let raw = ''
+    void streamChat(
+      provider,
+      apiKey,
+      messages,
+      {
+        onChunk(chunk: string) {
+          raw += chunk
+        },
+        onDone() {
+          resolve(raw)
+        },
+        onError(error: Error) {
+          reject(error)
+        }
+      },
+      model,
+      {
+        responseFormat: { type: 'json_object' }
+      }
+    )
+  })
+}
+
 export function useChatGeneration() {
   const editorStore = useEditorStore()
   const settingsStore = useSettingsStore()
@@ -67,47 +145,24 @@ export function useChatGeneration() {
 
     const scene = editorStore.currentScene as SceneType
     const sceneConfig = SCENE_CONFIGS[scene]
-    const systemPrompt = sceneConfig?.systemPrompt || ''
     const themeName = sceneConfig?.theme || editorStore.currentTheme
-
-    // Build message history for LLM
-    const llmMessages: ChatMessage[] = [
-      { role: 'system', content: systemPrompt }
-    ]
-
-    // Check if current message has image attachments for slide embedding
-    const currentMsg = editorStore.messages[editorStore.messages.length - 2]
-    const imageAttachments = currentMsg?.attachments?.filter(
-      (a) => a.fileType === 'image' && a.imageDataUrl
-    )
-    if (imageAttachments && imageAttachments.length > 0) {
-      const imageList = imageAttachments
-        .map((a, i) => `图片${i + 1}: "${a.fileName}" (data URI 已在用户消息中提供)`)
-        .join('\n')
-      llmMessages.push({
-        role: 'system',
-        content: `用户提供了以下图片，如果适合嵌入课件，可以使用 {"type": "image", "src": "<data URI>", "alt": "描述"} 元素。可用图片：\n${imageList}`
-      })
-    }
-
-    // Include previous conversation for context
-    for (const msg of editorStore.messages) {
-      if (msg.id === assistantId) break
-      if (msg.role === 'user') {
-        llmMessages.push({ role: 'user', content: buildUserContent(msg) })
-      } else if (msg.role === 'assistant' && msg.status === 'complete') {
-        llmMessages.push({ role: 'assistant', content: msg.content })
-      }
-    }
 
     let rawContent = ''
     let lastSlideCount = 0
+    let planningRaw = ''
+    let planDocument: SlidePlanDocument | null = null
 
     const batcher = createChunkBatcher((accumulated: string) => {
       rawContent += accumulated
 
       // Incrementally extract completed slides
-      const slides = extractCompletedSlides(rawContent)
+      const extractedSlides = extractCompletedSlides(rawContent)
+      const slides = planDocument
+        ? reconcileSlidesWithPlan(extractedSlides, {
+            ...planDocument,
+            plan: planDocument.plan.slice(0, extractedSlides.length)
+          })
+        : extractedSlides
       if (slides.length > 0 && slides.length !== lastSlideCount) {
         lastSlideCount = slides.length
         editorStore.setSlides(slides, conversationId ?? undefined)
@@ -115,6 +170,41 @@ export function useChatGeneration() {
     })
 
     try {
+      editorStore.setAssistantMessageContent(
+        assistantId,
+        '正在规划课件页面结构...',
+        conversationId ?? undefined
+      )
+
+      const planningMessages = buildBaseMessages(
+        editorStore.messages,
+        assistantId,
+        buildPlanningSystemPrompt(scene)
+      )
+      planningRaw = await streamToString(
+        settingsStore.currentProvider,
+        apiKey,
+        planningMessages,
+        settingsStore.currentModel
+      )
+
+      planDocument = parseSlidePlan(planningRaw, themeName)
+      if (!planDocument) {
+        throw new Error('页面规划生成失败')
+      }
+
+      editorStore.setAssistantMessageContent(
+        assistantId,
+        '页面规划完成，正在生成课件内容...',
+        conversationId ?? undefined
+      )
+
+      const llmMessages = buildBaseMessages(
+        editorStore.messages,
+        assistantId,
+        buildContentSystemPrompt(scene, planDocument)
+      )
+
       await streamChat(settingsStore.currentProvider, apiKey, llmMessages, {
         onChunk(chunk: string) {
           batcher.push(chunk)
@@ -122,10 +212,32 @@ export function useChatGeneration() {
         onDone() {
           batcher.flush()
           const presentation = finalizePresentation(rawContent, themeName)
-          editorStore.setSlides(presentation.slides, conversationId ?? undefined)
+          if (planDocument && presentation.slides.length !== planDocument.plan.length) {
+            batcher.destroy()
+            editorStore.setAssistantMessageContent(
+              assistantId,
+              `课件生成失败：页面规划要求 ${planDocument.plan.length} 页，但实际只生成 ${presentation.slides.length} 页。`,
+              conversationId ?? undefined
+            )
+            editorStore.setMessageStatus(assistantId, 'error', conversationId ?? undefined)
+            editorStore.setGenerating(false, conversationId ?? undefined)
+            return
+          }
+          const slides = planDocument
+            ? reconcileSlidesWithPlan(presentation.slides, planDocument)
+            : presentation.slides
+          const finalContent = JSON.stringify(
+            {
+              theme: presentation.theme,
+              slides
+            },
+            null,
+            2
+          )
+          editorStore.setSlides(slides, conversationId ?? undefined)
           editorStore.setAssistantMessageContent(
             assistantId,
-            rawContent,
+            finalContent,
             conversationId ?? undefined
           )
           editorStore.setMessageStatus(assistantId, 'complete', conversationId ?? undefined)

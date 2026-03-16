@@ -1,4 +1,36 @@
-import type { Slide, SlidePresentation } from '../../../shared/types/slide'
+import type {
+  Slide,
+  SlideElement,
+  SlideKind,
+  SlideLayout,
+  SlidePresentation,
+  SlideRegion
+} from '../../../shared/types/slide'
+
+const VALID_LAYOUTS: SlideLayout[] = ['title', 'content', 'summary']
+const VALID_KINDS: SlideKind[] = [
+  'cover',
+  'section',
+  'knowledge-points',
+  'question-choice',
+  'question-material',
+  'question-answer',
+  'explanation',
+  'summary'
+]
+const VALID_REGIONS: SlideRegion[] = [
+  'hero',
+  'lead',
+  'body',
+  'question',
+  'options',
+  'material',
+  'analysis',
+  'answer',
+  'tips',
+  'summary',
+  'footer'
+]
 
 /**
  * Incrementally extract completed Slide objects from a partial JSON string
@@ -87,9 +119,44 @@ export function extractCompletedSlides(partialJson: string): Slide[] {
 function isValidSlide(obj: unknown): boolean {
   if (typeof obj !== 'object' || obj === null) return false
   const slide = obj as Record<string, unknown>
-  if (!['title', 'content', 'summary'].includes(slide.layout as string)) return false
+  if (!VALID_LAYOUTS.includes(slide.layout as SlideLayout)) return false
+  if (slide.kind !== undefined && !VALID_KINDS.includes(slide.kind as SlideKind)) return false
   if (!Array.isArray(slide.elements)) return false
+  if (!(slide.elements as unknown[]).every(isValidElement)) return false
   return true
+}
+
+function isValidElement(element: unknown): element is SlideElement {
+  if (typeof element !== 'object' || element === null) return false
+  const el = element as Record<string, unknown>
+  if (typeof el.type !== 'string') return false
+  if (el.region !== undefined && !VALID_REGIONS.includes(el.region as SlideRegion)) return false
+
+  switch (el.type) {
+    case 'heading':
+      return (
+        (el.level === 2 || el.level === 3) &&
+        typeof el.content === 'string'
+      )
+    case 'text':
+    case 'blockquote':
+      return typeof el.content === 'string'
+    case 'list':
+      return Array.isArray(el.items) && el.items.every((item) => typeof item === 'string')
+    case 'table':
+      return (
+        Array.isArray(el.headers) &&
+        el.headers.every((item) => typeof item === 'string') &&
+        Array.isArray(el.rows) &&
+        el.rows.every(
+          (row) => Array.isArray(row) && row.every((cell) => typeof cell === 'string')
+        )
+      )
+    case 'image':
+      return typeof el.src === 'string' && (el.alt === undefined || typeof el.alt === 'string')
+    default:
+      return false
+  }
 }
 
 /**

@@ -1,21 +1,19 @@
 import { safeStorage } from 'electron'
 import Store from 'electron-store'
+import {
+  DEFAULT_APP_PREFERENCES,
+  type AppPreferences
+} from '../../shared/types/settings'
 
 interface StoreSchema {
   encryptedApiKeys: Record<string, string>
-  preferences: {
-    provider: string
-    model: string
-  }
+  preferences: AppPreferences
 }
 
 const store = new Store<StoreSchema>({
   defaults: {
     encryptedApiKeys: {},
-    preferences: {
-      provider: 'deepseek',
-      model: 'deepseek-chat'
-    }
+    preferences: DEFAULT_APP_PREFERENCES
   }
 })
 
@@ -50,10 +48,17 @@ export function deleteApiKey(provider: string): void {
   store.set('encryptedApiKeys', keys)
 }
 
-export function savePreferences(prefs: { provider: string; model: string }): void {
-  store.set('preferences', prefs)
+export function savePreferences(prefs: AppPreferences): void {
+  store.set('preferences', {
+    ...DEFAULT_APP_PREFERENCES,
+    ...prefs
+  })
 }
 
-export function loadPreferences(): { provider: string; model: string } {
-  return store.get('preferences', { provider: 'deepseek', model: 'deepseek-chat' })
+export function loadPreferences(): AppPreferences {
+  const prefs = store.get('preferences', DEFAULT_APP_PREFERENCES)
+  return {
+    ...DEFAULT_APP_PREFERENCES,
+    ...prefs
+  }
 }

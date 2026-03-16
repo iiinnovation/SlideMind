@@ -1,35 +1,11 @@
 <script setup lang="ts">
 import { FileText, Image as ImageIcon } from 'lucide-vue-next'
 import type { UIChatMessage } from '@/types/llm'
+import { formatMessagePreview } from '@/services/conversationPreview'
 
 defineProps<{
   message: UIChatMessage
 }>()
-
-function formatSummary(content: string): string {
-  try {
-    let cleaned = content.trim()
-    const fenceMatch = cleaned.match(/```(?:json)?\s*\n?([\s\S]*?)```/)
-    if (fenceMatch) cleaned = fenceMatch[1].trim()
-
-    const parsed = JSON.parse(cleaned)
-    if (parsed && Array.isArray(parsed.slides) && parsed.slides.length > 0) {
-      const slideCount = parsed.slides.length
-      const titleSlide = parsed.slides[0]
-      const title = titleSlide?.title || ''
-      return title
-        ? `已生成 ${slideCount} 页课件：${title}`
-        : `已生成 ${slideCount} 页课件`
-    }
-  } catch {
-    // Not valid JSON — try Marp markdown separator counting
-    const slideCount = (content.match(/^---$/gm) || []).length + 1
-    if (slideCount > 1) {
-      return `已生成 ${slideCount} 页课件`
-    }
-  }
-  return content.length > 100 ? content.slice(0, 100) + '...' : content
-}
 </script>
 
 <template>
@@ -73,7 +49,7 @@ function formatSummary(content: string): string {
         <span v-if="message.content">{{ message.content }}</span>
       </template>
       <template v-else>
-        <span>{{ message.status === 'streaming' && !message.content ? '正在整理课件结构...' : formatSummary(message.content) }}</span>
+        <span>{{ message.status === 'streaming' && !message.content ? '正在整理课件结构...' : formatMessagePreview(message.content) }}</span>
         <span
           v-if="message.status === 'streaming'"
           class="ml-0.5 inline-block h-3.5 w-0.5 bg-accent"
