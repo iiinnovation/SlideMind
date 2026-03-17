@@ -10,6 +10,7 @@ const scrollContainerRef = ref<HTMLElement | null>(null)
 
 const emit = defineEmits<{
   send: [content: string, attachments: UIAttachment[]]
+  stop: []
 }>()
 
 watch(
@@ -71,6 +72,7 @@ watch(
         :disabled="editorStore.isGenerating"
         placeholder="输入修改要求..."
         @send="(content, attachments) => emit('send', content, attachments)"
+        @stop="emit('stop')"
       />
     </div>
   </div>

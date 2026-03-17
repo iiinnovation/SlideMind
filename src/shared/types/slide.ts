@@ -38,6 +38,7 @@ export type SlideElement =
 export interface Slide {
   layout: SlideLayout
   kind?: SlideKind
+  templateId?: string
   title?: string
   subtitle?: string
   elements: SlideElement[]

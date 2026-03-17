@@ -15,6 +15,20 @@ export const IPC_CHANNELS = {
   FILE_PARSE: 'file:parse'
 } as const
 
+export const EXPORT_LAYOUT_LIMITS = {
+  slideContentMaxY: 6.9,
+  minFontScale: 0.82,
+  genericMaxListItems: {
+    'knowledge-points': 5,
+    summary: 4
+  },
+  structuredRegionPriority: {
+    'question-material': ['material', 'question', 'analysis', 'answer'],
+    'question-choice': ['question', 'options'],
+    'question-answer': ['question', 'analysis', 'answer']
+  }
+} as const
+
 /**
  * Scene types
  */

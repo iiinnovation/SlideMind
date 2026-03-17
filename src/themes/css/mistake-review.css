@@ -2,6 +2,9 @@
 
 section {
   box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
   font-family: var(--slide-body-font-family, 'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif);
   font-size: var(--slide-body-font-size, 16px);
   background: #FFFFFF;
@@ -48,6 +51,7 @@ section p {
   color: #37362F;
   margin: 0.1em 0 0.45em;
   max-width: 92%;
+  overflow-wrap: anywhere;
 }
 
 section ul, section ol {
@@ -62,6 +66,7 @@ section li {
   line-height: 1.72;
   margin-bottom: 0.3em;
   padding-left: 0.15em;
+  overflow-wrap: anywhere;
 }
 
 section strong {
@@ -106,48 +111,113 @@ section th {
 section.question-answer,
 section.question-choice,
 section.question-material {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  grid-auto-rows: min-content;
-  gap: 14px;
-  align-content: start;
+  background: transparent;
+  padding-top: 44px;
+  padding-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-content: stretch;
+  align-items: flex-start;
 }
 
 section.question-answer h1,
 section.question-choice h1,
 section.question-material h1 {
-  grid-column: 1 / -1;
   margin-bottom: 0.1em;
 }
 
 section.question-answer > .region,
 section.question-choice > .region,
 section.question-material > .region {
-  border: 1px solid rgba(174, 86, 48, 0.18);
-  background: #fbf7f3;
-  border-radius: 18px;
-  padding: 15px 17px 16px;
+  min-width: 0;
+  width: min(100%, 860px);
+  max-width: 860px;
+  border: none;
+  background: transparent;
+  border-radius: 0;
+  padding: 2px 0 4px;
   min-height: 0;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  box-shadow: none;
+}
+
+section.question-answer > .region-question,
+section.question-choice > .region-question {
+  width: min(100%, 920px);
+  max-width: 920px;
+}
+
+section.question-choice > .region {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+section.question-choice > .region-question p,
+section.question-choice > .region-question ul,
+section.question-choice > .region-question ol {
+  font-size: 1.02em;
+  line-height: 1.5;
+}
+
+section.question-choice > .region-question ul,
+section.question-choice > .region-question ol,
+section.question-choice > .region-options ul,
+section.question-choice > .region-options ol {
+  list-style: none;
+  padding-left: 0;
+}
+
+section.question-choice > .region-question li::marker,
+section.question-choice > .region-options li::marker {
+  content: "";
+}
+
+section.question-choice > .region-options li,
+section.question-choice > .region-tips li {
+  margin-bottom: 0.2em;
+}
+
+section.question-choice > .region-options .choice-correct-text {
+  display: inline-block;
+  border: 2px solid #c91f12;
+  padding: 0.06em 0.38em;
+  line-height: 1.25;
+  vertical-align: baseline;
+}
+
+section.question-choice > .region-answer {
+  display: none;
+}
+
+section.question-material > .region-material,
+section.question-material > .region-question {
+  width: min(100%, 920px);
+  max-width: 920px;
 }
 
 section.question-answer > .region::before,
-section.question-choice > .region::before,
 section.question-material > .region::before {
   content: attr(data-region-label);
   display: block;
-  margin-bottom: 0.55em;
+  margin-bottom: 0.22em;
   font-family: var(--slide-title-font-family, 'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif);
-  font-size: 0.78em;
+  font-size: 0.72em;
   font-weight: 600;
   letter-spacing: 0.02em;
   color: #ae5630;
+}
+
+section.question-choice > .region::before {
+  display: none;
+  content: none;
+  margin-bottom: 0;
 }
 
 section.question-answer > .region > :first-child,
 section.question-choice > .region > :first-child,
 section.question-material > .region > :first-child {
   margin-top: 0;
+  min-width: 0;
 }
 
 section.question-answer > .region ul,
@@ -156,74 +226,60 @@ section.question-material > .region ul,
 section.question-answer > .region ol,
 section.question-choice > .region ol,
 section.question-material > .region ol {
-  margin-top: 0.05em;
-  margin-bottom: 0.1em;
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
-section.question-answer > .region-question {
+section.question-choice > .region-options ul,
+section.question-answer > .region ul,
+section.question-material > .region ul,
+section.question-choice > .region-options ol,
+section.question-answer > .region ol,
+section.question-material > .region ol {
+  columns: 1;
+}
+
+section.question-answer > .region p,
+section.question-choice > .region p,
+section.question-material > .region p,
+section.question-answer > .region ul,
+section.question-choice > .region ul,
+section.question-material > .region ul,
+section.question-answer > .region ol,
+section.question-choice > .region ol,
+section.question-material > .region ol {
+  max-width: 100%;
+}
+
+section.tpl-mistake-cover {
+  justify-content: center;
+}
+
+section.tpl-mistake-patterns,
+section.tpl-qa-review {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 14px;
+}
+
+section.tpl-mistake-patterns h1,
+section.tpl-qa-review h1 {
   grid-column: 1 / -1;
 }
 
-section.question-answer > .region-analysis {
-  grid-column: 1 / 5;
+section.tpl-mistake-patterns > .region-analysis,
+section.tpl-qa-review > .region-question {
+  grid-column: 1 / 7;
 }
 
-section.question-answer > .region-answer {
-  grid-column: 5 / 9;
+section.tpl-mistake-patterns > .region-tips,
+section.tpl-qa-review > .region-answer {
+  grid-column: 7 / -1;
 }
 
-section.question-answer > .region-tips {
-  grid-column: 9 / -1;
-}
-
-section.question-choice > .region-question {
+section.tpl-mistake-patterns > .region-body,
+section.tpl-qa-review > .region-tips {
   grid-column: 1 / -1;
-}
-
-section.question-choice > .region-options {
-  grid-column: 1 / 8;
-}
-
-section.question-choice > .region-answer,
-section.question-choice > .region-tips {
-  grid-column: 8 / -1;
-}
-
-section.question-material > .region-material {
-  grid-column: 1 / 5;
-  grid-row: 2 / span 3;
-}
-
-section.question-material > .region-question {
-  grid-column: 5 / -1;
-}
-
-section.question-material > .region-analysis {
-  grid-column: 5 / 9;
-}
-
-section.question-material > .region-answer {
-  grid-column: 9 / -1;
-}
-
-section.question-material > .region-tips {
-  grid-column: 5 / -1;
-}
-
-.region[data-region='question'] {
-  background: #f9f4ef;
-}
-
-.region[data-region='answer'] {
-  background: #f4f8ef;
-}
-
-.region[data-region='tips'] {
-  background: #fff8ec;
-}
-
-.region[data-region='material'] {
-  background: #f6f6f4;
 }
 
 .slide-image { text-align: center; margin: 0.5em 0; }

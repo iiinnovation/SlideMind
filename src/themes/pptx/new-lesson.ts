@@ -1,20 +1,20 @@
-import type { TextPropsOptions } from 'pptxgenjs'
+import PptxGenJS from 'pptxgenjs'
 
 export interface PptxThemeConfig {
   background: { color: string } | { path: string }
-  title: Partial<TextPropsOptions>
-  subtitle: Partial<TextPropsOptions>
-  body: Partial<TextPropsOptions>
-  bullet: Partial<TextPropsOptions>
+  title: Partial<PptxGenJS.TextPropsOptions>
+  subtitle: Partial<PptxGenJS.TextPropsOptions>
+  body: Partial<PptxGenJS.TextPropsOptions>
+  bullet: Partial<PptxGenJS.TextPropsOptions>
   classOverrides?: Record<string, Partial<PptxClassOverride>>
 }
 
 export interface PptxClassOverride {
   background: { color: string } | { path: string }
-  title: Partial<TextPropsOptions>
-  subtitle: Partial<TextPropsOptions>
-  body: Partial<TextPropsOptions>
-  bullet: Partial<TextPropsOptions>
+  title: Partial<PptxGenJS.TextPropsOptions>
+  subtitle: Partial<PptxGenJS.TextPropsOptions>
+  body: Partial<PptxGenJS.TextPropsOptions>
+  bullet: Partial<PptxGenJS.TextPropsOptions>
 }
 
 export const newLessonPptxTheme: PptxThemeConfig = {
@@ -65,6 +65,30 @@ export const newLessonPptxTheme: PptxThemeConfig = {
         bold: false,
         color: 'AE5630',
         fontFace: 'Microsoft YaHei'
+      }
+    },
+    'tpl-cover-hero': {
+      title: {
+        fontSize: 40,
+        align: 'center'
+      },
+      subtitle: {
+        fontSize: 24,
+        align: 'center'
+      }
+    },
+    'tpl-section-break': {
+      background: { color: 'F8F3EC' }
+    },
+    'tpl-knowledge-bullets': {},
+    'tpl-knowledge-compare': {},
+    'tpl-example-explanation': {},
+    'tpl-method-summary': {},
+    'tpl-experiment-steps': {},
+    'tpl-summary-close': {
+      subtitle: {
+        fontSize: 24,
+        color: 'AE5630'
       }
     }
   }

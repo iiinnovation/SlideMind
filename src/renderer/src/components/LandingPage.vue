@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BookOpen, FileQuestion } from 'lucide-vue-next'
+import { BookOpen, ClipboardList, FileQuestion } from 'lucide-vue-next'
 import { useEditorStore } from '../stores/editor'
 import { SCENE_CONFIGS, type SceneType } from '../services/promptService'
 import TemplateCard from './TemplateCard.vue'
@@ -10,11 +10,13 @@ const editorStore = useEditorStore()
 
 const emit = defineEmits<{
   send: [content: string, attachments: UIAttachment[]]
+  stop: []
 }>()
 
 const sceneIcons: Record<SceneType, typeof BookOpen> = {
   'new-lesson': BookOpen,
-  'mistake-review': FileQuestion
+  'mistake-review': FileQuestion,
+  'exam-review': ClipboardList
 }
 
 const sceneKeys = Object.keys(SCENE_CONFIGS) as SceneType[]
@@ -47,6 +49,7 @@ const sceneKeys = Object.keys(SCENE_CONFIGS) as SceneType[]
         :disabled="editorStore.isGenerating"
         placeholder="描述你的课件需求，例如：帮我生成一份《三角函数》的课件..."
         @send="(content, attachments) => emit('send', content, attachments)"
+        @stop="emit('stop')"
       />
     </div>
   </div>

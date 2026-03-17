@@ -8,6 +8,9 @@ export interface ParsedAttachment {
   fileSize: number
   extractedText?: string
   textPreview?: string
+  planningSummary?: string
+  contentSummary?: string
+  classification?: string
   imageDataUrl?: string
   thumbnailDataUrl?: string
 }

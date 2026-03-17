@@ -24,5 +24,27 @@ export const mistakeReviewPptxTheme: PptxThemeConfig = {
     color: '37362F',
     fontFace: 'Microsoft YaHei',
     bullet: true
+  },
+  classOverrides: {
+    'tpl-mistake-cover': {
+      title: {
+        fontSize: 34
+      },
+      subtitle: {
+        fontSize: 22,
+        color: 'AE5630'
+      }
+    },
+    'tpl-choice-diagnosis': {},
+    'tpl-material-diagnosis': {},
+    'tpl-answer-diagnosis': {},
+    'tpl-mistake-patterns': {},
+    'tpl-qa-review': {},
+    'tpl-mistake-summary': {
+      subtitle: {
+        fontSize: 22,
+        color: 'AE5630'
+      }
+    }
   }
 }

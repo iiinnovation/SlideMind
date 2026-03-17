@@ -57,6 +57,9 @@ export interface UIAttachment {
   fileType: AttachmentType
   thumbnailDataUrl?: string
   extractedText?: string
+  planningSummary?: string
+  contentSummary?: string
+  classification?: string
   imageDataUrl?: string
 }
 
@@ -69,6 +72,16 @@ export interface UIChatMessage {
   attachments?: UIAttachment[]
 }
 
+export interface LLMGenerationDebugBatch {
+  label: string
+  raw: string
+}
+
+export interface LLMGenerationDebug {
+  planningRaw: string
+  contentBatches: LLMGenerationDebugBatch[]
+}
+
 export interface EditorConversation {
   id: string
   title: string
@@ -77,6 +90,7 @@ export interface EditorConversation {
   currentScene: string
   currentTheme: string
   messages: UIChatMessage[]
+  llmDebug: LLMGenerationDebug
   isGenerating: boolean
   createdAt: number
   updatedAt: number

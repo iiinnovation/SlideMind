@@ -11,6 +11,11 @@ import type { PresentationTypographySettings } from '../../../shared/types/setti
 const props = defineProps<{
   slides: Slide[]
   theme: string
+  currentSlideIndex?: number
+}>()
+
+const emit = defineEmits<{
+  'update:currentSlideIndex': [index: number]
 }>()
 
 const editorStore = useEditorStore()
@@ -24,6 +29,7 @@ const typographySettings = computed<PresentationTypographySettings>(() => ({
 
 const previewContainerRef = ref<HTMLElement | null>(null)
 const containerScale = ref(1)
+const isExporting = ref(false)
 
 const {
   renderedCSS,
@@ -40,7 +46,16 @@ const {
   typographySettings
 )
 
-const { hostRef, updateCSS, updateSlide, clear } = useShadowDom()
+const { hostRef, contentHeight, updateCSS, updateSlide, clear } = useShadowDom()
+const activeSlide = computed(() => props.slides[currentSlide.value] ?? null)
+const previewHeight = computed(() => {
+  const slide = activeSlide.value
+  if (!slide) return 720
+  if (slide.kind === 'question-answer' || slide.kind === 'question-choice' || slide.kind === 'question-material') {
+    return Math.max(320, contentHeight.value)
+  }
+  return 720
+})
 
 // Push CSS changes to Shadow DOM
 watch(renderedCSS, (css) => {
@@ -61,13 +76,26 @@ watch(() => editorStore.activeConversationId, () => {
   goToSlide(0)
 })
 
+watch(
+  () => props.currentSlideIndex,
+  (index) => {
+    if (typeof index === 'number' && index !== currentSlide.value) {
+      goToSlide(index)
+    }
+  }
+)
+
+watch(currentSlide, (index) => {
+  emit('update:currentSlideIndex', index)
+})
+
 let resizeObserver: ResizeObserver | null = null
 
 function updateScale() {
   if (!previewContainerRef.value) return
   const rect = previewContainerRef.value.getBoundingClientRect()
   const scaleX = rect.width / 1280
-  const scaleY = rect.height / 720
+  const scaleY = rect.height / previewHeight.value
   containerScale.value = Math.min(scaleX, scaleY, 1)
 }
 
@@ -79,7 +107,7 @@ onMounted(() => {
   updateScale()
 })
 
-watch([totalSlides, currentSlide], () => {
+watch([totalSlides, currentSlide, previewHeight], () => {
   updateScale()
 })
 
@@ -90,22 +118,28 @@ onBeforeUnmount(() => {
   }
 })
 
-async function handleExport() {
+async function runExport() {
+  isExporting.value = true
   const result = await window.api.exportPptx(
     JSON.parse(JSON.stringify(editorStore.slides)),
     editorStore.currentTheme,
     typographySettings.value
   )
+  isExporting.value = false
   if (result.success) {
     alert(`导出成功：${result.filePath}`)
   } else if (result.reason !== 'cancelled') {
     alert(`导出失败：${result.reason}`)
   }
 }
+
+async function handleExport() {
+  await runExport()
+}
 </script>
 
 <template>
-  <div class="flex h-full flex-col bg-page">
+  <div class="flex h-full min-w-0 flex-col bg-page">
     <!-- Top bar: page indicator + export -->
     <div class="relative flex items-center justify-between border-b px-4 py-2">
       <!-- Left: page indicator + status -->
@@ -128,10 +162,11 @@ async function handleExport() {
       <button
         v-if="totalSlides > 0"
         class="inline-flex items-center gap-1.5 rounded bg-accent px-3 py-1 text-xs text-white transition-all duration-150 hover:bg-accent-hover active:scale-[0.98] active:bg-accent-active"
+        :disabled="isExporting"
         @click="handleExport"
       >
         <Download :size="13" :stroke-width="1.5" />
-        导出 PPT
+        {{ isExporting ? '导出中...' : '导出 PPT' }}
       </button>
       <div v-else />
     </div>
@@ -146,14 +181,15 @@ async function handleExport() {
         class="overflow-hidden rounded-lg shadow-soft"
         :style="{
           width: 1280 * containerScale + 'px',
-          height: 720 * containerScale + 'px'
+          height: previewHeight * containerScale + 'px'
         }"
       >
         <div
           ref="hostRef"
           :style="{
             width: '1280px',
-            height: '720px',
+            height: `${previewHeight}px`,
+            '--slide-preview-height': `${previewHeight}px`,
             transform: `scale(${containerScale})`,
             transformOrigin: 'top left'
           }"
@@ -200,5 +236,6 @@ async function handleExport() {
         <ChevronRight :size="18" :stroke-width="1.5" />
       </button>
     </div>
+
   </div>
 </template>

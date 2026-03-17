@@ -1,6 +1,8 @@
 import { ref, computed, watch, type Ref, onBeforeUnmount } from 'vue'
+import { EXPORT_LAYOUT_LIMITS } from '../../../shared/constants'
 import type { Slide, SlideElement } from '../../../shared/types/slide'
 import type { PresentationTypographySettings } from '../../../shared/types/settings'
+import { getSlideTemplate } from '../../../shared/templates'
 import newLessonCSS from '@themes/css/new-lesson.css?raw'
 import mistakeReviewCSS from '@themes/css/mistake-review.css?raw'
 
@@ -54,46 +56,87 @@ function renderTable(el: Extract<SlideElement, { type: 'table' }>): string {
   return html
 }
 
+function renderElementToHTML(el: SlideElement): string {
+  switch (el.type) {
+    case 'heading':
+      return `<h${el.level}>${escapeHtml(el.content)}</h${el.level}>`
+    case 'text':
+      return `<p>${renderInlineFormatting(el.content)}</p>`
+    case 'list': {
+      const tag = el.ordered ? 'ol' : 'ul'
+      return `<${tag}>${el.items.map((i) => `<li>${renderInlineFormatting(i)}</li>`).join('')}</${tag}>`
+    }
+    case 'blockquote':
+      return `<blockquote><p>${escapeHtml(el.content)}</p></blockquote>`
+    case 'table':
+      return renderTable(el)
+    case 'image':
+      return `<div class="slide-image"><img src="${el.src}" alt="${escapeHtml(el.alt || '')}" /></div>`
+  }
+}
+
+function extractChoiceAnswerLabel(elements: SlideElement[]): string | null {
+  for (const element of elements) {
+    const content =
+      element.type === 'text' || element.type === 'blockquote' || element.type === 'heading'
+        ? element.content
+        : element.type === 'list'
+          ? element.items.join(' ')
+          : ''
+    const match = content.match(/(?:正确答案|答案|选)(?:[:：\s])*([A-D])/i)
+    if (match?.[1]) {
+      return match[1].toUpperCase()
+    }
+  }
+  return null
+}
+
+function renderChoiceOptionsHTML(elements: SlideElement[], answerLabel: string | null): string {
+  return elements
+    .map((element) => {
+      if (element.type !== 'list') {
+        return renderElementToHTML(element)
+      }
+
+      const tag = element.ordered ? 'ol' : 'ul'
+      const items = element.items
+        .map((item) => {
+          const optionMatch = item.trim().match(/^([A-D])[.．、:\s]/i)
+          const isCorrect = answerLabel && optionMatch?.[1]?.toUpperCase() === answerLabel
+          const content = renderInlineFormatting(item)
+          return isCorrect
+            ? `<li><span class="choice-correct-text">${content}</span></li>`
+            : `<li>${content}</li>`
+        })
+        .join('')
+      return `<${tag}>${items}</${tag}>`
+    })
+    .join('')
+}
+
 function renderSlideToHTML(slide: Slide): string {
   const classes = [slide.layout]
   if (slide.kind) classes.push(slide.kind)
+  if (isStructuredSlide(slide)) classes.push('preview-flow')
+  const template = getSlideTemplate(slide.templateId)
+  if (template?.previewClass) classes.push(template.previewClass)
   let html = `<section class="${classes.join(' ')}" data-layout="${slide.layout}"`
   if (slide.kind) {
     html += ` data-kind="${slide.kind}"`
+  }
+  if (slide.templateId) {
+    html += ` data-template-id="${slide.templateId}"`
   }
   html += '>'
 
   if (slide.title) html += `<h1>${escapeHtml(slide.title)}</h1>`
   if (slide.subtitle) html += `<h2>${escapeHtml(slide.subtitle)}</h2>`
 
-  for (const el of slide.elements) {
-    switch (el.type) {
-      case 'heading':
-        html += renderRegionWrapper(el.region, `<h${el.level}>${escapeHtml(el.content)}</h${el.level}>`)
-        break
-      case 'text':
-        html += renderRegionWrapper(el.region, `<p>${renderInlineFormatting(el.content)}</p>`)
-        break
-      case 'list': {
-        const tag = el.ordered ? 'ol' : 'ul'
-        html += renderRegionWrapper(
-          el.region,
-          `<${tag}>${el.items.map((i) => `<li>${renderInlineFormatting(i)}</li>`).join('')}</${tag}>`
-        )
-        break
-      }
-      case 'blockquote':
-        html += renderRegionWrapper(el.region, `<blockquote><p>${escapeHtml(el.content)}</p></blockquote>`)
-        break
-      case 'table':
-        html += renderRegionWrapper(el.region, renderTable(el))
-        break
-      case 'image':
-        html += renderRegionWrapper(
-          el.region,
-          `<div class="slide-image"><img src="${el.src}" alt="${escapeHtml(el.alt || '')}" /></div>`
-        )
-        break
+  if (isStructuredSlide(slide)) {
+    html += renderStructuredRegions(slide)
+  } else {
+    for (const el of slide.elements) {
+      html += renderRegionWrapper(el.region, renderElementToHTML(el))
     }
   }
 
@@ -105,6 +148,44 @@ function renderRegionWrapper(region: SlideElement['region'], inner: string): str
   if (!region) return inner
   const label = REGION_LABELS[region] || region
   return `<div class="region region-${region}" data-region="${region}" data-region-label="${label}">${inner}</div>`
+}
+
+function isStructuredSlide(slide: Slide): boolean {
+  return Boolean(
+    slide.kind &&
+    ['question-answer', 'question-choice', 'question-material'].includes(slide.kind)
+  )
+}
+
+function renderStructuredRegions(slide: Slide): string {
+  if (!slide.kind || !isStructuredSlide(slide)) return ''
+  const order = EXPORT_LAYOUT_LIMITS.structuredRegionPriority[slide.kind]
+  const regionGroups = new Map<string, SlideElement[]>()
+  const answerLabel = slide.kind === 'question-choice'
+    ? extractChoiceAnswerLabel(slide.elements.filter((element) => element.region === 'answer'))
+    : null
+
+  for (const element of slide.elements) {
+    const key = element.region ?? 'body'
+    const list = regionGroups.get(key) ?? []
+    list.push(element)
+    regionGroups.set(key, list)
+  }
+
+  const orderedRegions = [
+    ...order.filter((region) => regionGroups.has(region)),
+    ...Array.from(regionGroups.keys()).filter((region) => !order.includes(region as never))
+  ]
+
+  return orderedRegions
+    .map((region) => {
+      const elements = regionGroups.get(region) ?? []
+      const inner = slide.kind === 'question-choice' && region === 'options'
+        ? renderChoiceOptionsHTML(elements, answerLabel)
+        : elements.map(renderElementToHTML).join('')
+      return renderRegionWrapper(region as SlideElement['region'], inner)
+    })
+    .join('')
 }
 
 function clamp(value: number, min: number, max: number) {

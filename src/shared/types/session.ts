@@ -6,6 +6,11 @@ export interface StoredAttachment {
   fileName: string
   fileType: AttachmentType
   thumbnailDataUrl?: string
+  extractedText?: string
+  planningSummary?: string
+  contentSummary?: string
+  classification?: string
+  imageDataUrl?: string
 }
 
 export interface StoredEditorConversation {
@@ -15,6 +20,13 @@ export interface StoredEditorConversation {
   slides: Slide[]
   currentScene: string
   currentTheme: string
+  llmDebug?: {
+    planningRaw: string
+    contentBatches: Array<{
+      label: string
+      raw: string
+    }>
+  }
   messages: Array<{
     id: string
     role: 'user' | 'assistant'

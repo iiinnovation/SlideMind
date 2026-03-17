@@ -6,6 +6,7 @@ import { ref, watch, onBeforeUnmount } from 'vue'
  */
 export function useShadowDom() {
   const hostRef = ref<HTMLElement | null>(null)
+  const contentHeight = ref(720)
 
   let shadowRoot: ShadowRoot | null = null
   let resetStyleEl: HTMLStyleElement | null = null
@@ -28,13 +29,22 @@ export function useShadowDom() {
   contain: content;
   display: block;
   width: 1280px;
-  height: 720px;
+  height: var(--slide-preview-height, 720px);
 }
 .slide-container {
   width: 1280px;
-  height: 720px;
+  min-height: var(--slide-preview-height, 720px);
   position: relative;
   overflow: hidden;
+}
+.slide-container > section {
+  width: 1280px;
+  min-height: var(--slide-preview-height, 720px);
+  overflow: hidden;
+}
+.slide-container > section.preview-flow {
+  min-height: 0;
+  height: auto;
 }
 `
     shadowRoot.appendChild(resetStyleEl)
@@ -67,6 +77,7 @@ export function useShadowDom() {
     }
     if (marpStyleEl.textContent !== css) {
       marpStyleEl.textContent = css
+      queueMeasure()
     }
   }
 
@@ -78,6 +89,7 @@ export function useShadowDom() {
     if (slideHTML !== currentSlideHTML) {
       slideContainer.innerHTML = slideHTML
       currentSlideHTML = slideHTML
+      queueMeasure()
     }
   }
 
@@ -87,6 +99,20 @@ export function useShadowDom() {
       currentSlideHTML = ''
     }
     pendingSlideHTML = null
+    contentHeight.value = 720
+  }
+
+  function queueMeasure() {
+    requestAnimationFrame(() => {
+      if (!slideContainer) return
+      const section = slideContainer.querySelector('section') as HTMLElement | null
+      if (!section) {
+        contentHeight.value = 720
+        return
+      }
+      const measured = Math.ceil(section.scrollHeight || section.getBoundingClientRect().height || 720)
+      contentHeight.value = Math.max(1, measured)
+    })
   }
 
   // Watch for host element mounting
@@ -104,10 +130,12 @@ export function useShadowDom() {
     pendingCSS = null
     pendingSlideHTML = null
     currentSlideHTML = ''
+    contentHeight.value = 720
   })
 
   return {
     hostRef,
+    contentHeight,
     updateCSS,
     updateSlide,
     clear

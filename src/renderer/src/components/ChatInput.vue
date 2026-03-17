@@ -11,6 +11,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   send: [content: string, attachments: UIAttachment[]]
+  stop: []
 }>()
 
 const inputText = ref('')
@@ -71,6 +72,9 @@ async function handleAttach() {
           fileType: att.fileType,
           thumbnailDataUrl: att.thumbnailDataUrl,
           extractedText: att.extractedText,
+          planningSummary: att.planningSummary,
+          contentSummary: att.contentSummary,
+          classification: att.classification,
           imageDataUrl: att.imageDataUrl
         }
         pendingAttachments.value.push(uiAtt)
@@ -152,8 +156,8 @@ async function handleAttach() {
         :class="canSend
           ? 'bg-accent text-white hover:bg-accent-hover'
           : 'bg-surface-hover text-text-muted cursor-not-allowed'"
-        :disabled="!canSend"
-        @click="handleSend"
+        :disabled="disabled ? false : !canSend"
+        @click="disabled ? emit('stop') : handleSend()"
       >
         <Square v-if="disabled" :size="14" :stroke-width="1.5" />
         <ArrowUp v-else :size="16" :stroke-width="2" />
