@@ -133,35 +133,6 @@ type SlideRegion =
    - `附件解析调试`
 5. 确认无误后导出为 `.pptx`。
 
-## 提交到 GitHub 前
-
-以下内容建议保留在本地，不要提交：
-
-- `.env` / `.env.*`
-- `.tmp/`
-- `out/`
-- `dist/`
-- `.claude/`
-- `node_modules/`
-- 内部文档：
-  - `prd.md`
-  - `prd_v2.md`
-  - `CLAUDE.md`
-  - `docs/`
-
-建议提交前至少检查一次：
-
-```bash
-git status --short
-npm run typecheck
-```
-
-如果你准备公开仓库，再额外确认：
-
-- README 里没有本地路径、私有 API 信息
-- 示例文件里不包含真实学生资料
-- 调试输出里没有残留敏感文本样例
-
 ## License
 
 MIT
